@@ -15,13 +15,16 @@ import {
 } from "react-bootstrap";
 
 const schema = yup.object().shape({
-  comment: yup.string().required("Le commentaire est obligatoire").max(500),
+  comment: yup
+    .string()
+    .required("Le commentaire est obligatoire")
+    .max(500, "Le commentaire ne doit pas dépasser 500 caractères"),
   note: yup
     .number()
     .typeError("Veuillez sélectionner une note.")
     .required("Veuillez sélectionner une note.")
-    .min(1)
-    .max(5),
+    .min(1, "La note minimale est 1")
+    .max(5, "La note maximale est 5"),
   acceptConditions: yup
     .bool()
     .oneOf([true], "Vous devez accepter les conditions générales")
@@ -30,7 +33,7 @@ const schema = yup.object().shape({
 function App() {
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
   const comments = useSelector((state) => state.comments);
   const dispatch = useDispatch();
 
@@ -43,27 +46,18 @@ function App() {
     resolver: yupResolver(schema)
   });
 
-  const defaultPoster = "https://via.placeholder.com/600x300?text=Pas+de+visuel";
-
-  const getPoster = (movie) => {
-    if (movie.poster_path) {
-      return movie.poster_path.startsWith("http")
-        ? movie.poster_path
-        : `https://image.tmdb.org/t/p/original${movie.poster_path}`;
-    }
-    return defaultPoster;
-  };
-
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        setError(false);
-        setLoading(true);
         const res = await fetch("https://jsonfakery.com/movies/random/1");
+        if (!res.ok) {
+          throw new Error("Erreur lors du chargement du film");
+        }
         const data = await res.json();
         setMovie(data[0]);
       } catch (err) {
-        setError(true);
+        console.error("Erreur attrapée dans le catch :", err.message);
+        setError("Impossible de charger le film");
       } finally {
         setLoading(false);
       }
@@ -78,13 +72,18 @@ function App() {
   };
 
   return (
-    <Container className="mt-5">
+    <Container className="mt-5" style={{ maxWidth: "800px" }}>
       {loading && <p>Chargement...</p>}
-      {error && <Alert variant="danger">Erreur lors du chargement du film.</Alert>}
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {movie && (
         <Card className="mb-4">
-          <Card.Img variant="top" src={getPoster(movie)} alt={movie.original_title} />
+          <Card.Img
+            variant="top"
+            src={movie.poster_path}
+            alt={movie.original_title}
+            style={{ width: "100%", height: "500px", objectFit: "cover" }}
+          />
           <Card.Body>
             <Card.Title>{movie.original_title}</Card.Title>
             <Card.Subtitle className="mb-2 text-muted">
