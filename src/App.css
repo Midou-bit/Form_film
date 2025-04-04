@@ -1,0 +1,10 @@
+.app-container {
+    margin-top: 2rem;
+  }
+  
+  .movie-poster {
+    width: 100%;
+    height: 300px;
+    object-fit: contain;
+  }
+  
